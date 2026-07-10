@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReliefOps — Disaster Supply Distribution</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #1a1d23; --ink-2: #3d4251; --ink-3: #6b7280;
+      --rule: #e2e4e9; --surface: #f7f8fa; --white: #ffffff;
+      --accent: #2a7c6f; --accent-lt: #e6f2f0;
+      --s-full-bg: #ecfdf5; --s-full-txt: #166534; --s-full-bdr: #bbf7d0;
+      --s-part-bg: #fefce8; --s-part-txt: #854d0e; --s-part-bdr: #fde68a;
+      --s-none-bg: #fff1f2; --s-none-txt: #9f1239; --s-none-bdr: #fecdd3;
+      --font-ui: 'Inter','Segoe UI',system-ui,sans-serif;
+      --font-mono: 'JetBrains Mono','Consolas',monospace;
+      --gap: 1.5rem; --r: 6px;
+    }
+    html { font-size: 15px; }
+    body { font-family: var(--font-ui); background: var(--surface); color: var(--ink); line-height: 1.55; min-height: 100vh; }
+    h2 { font-size: 0.95rem; font-weight: 600; }
+    label { font-size: 0.82rem; font-weight: 600; color: var(--ink-2); display: block; margin-bottom: 5px; }
+    small { font-size: 0.78rem; color: var(--ink-3); }
+
+    /* Header */
+    #app-header {
+      background: var(--white); border-bottom: 1px solid var(--rule);
+      padding: 0 var(--gap); height: 54px;
+      display: flex; align-items: center; gap: 12px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .wordmark { font-size: 1rem; font-weight: 800; letter-spacing: -0.03em; color: var(--accent); }
+    .tagline  { font-size: 0.75rem; color: var(--ink-3); border-left: 1px solid var(--rule); padding-left: 12px; }
+    .nav-tabs { margin-left: auto; display: flex; gap: 2px; }
+    .nav-tab {
+      padding: 6px 14px; font-size: 0.78rem; font-weight: 600;
+      border: none; background: none; cursor: pointer; color: var(--ink-3);
+      border-radius: var(--r); transition: all .15s;
+    }
+    .nav-tab:hover  { background: var(--surface); color: var(--ink-2); }
+    .nav-tab.active { background: var(--accent-lt); color: var(--accent); }
+
+    /* Layout */
+    main { max-width: 980px; margin: 0 auto; padding: var(--gap); }
+    .tab-page { display: none; flex-direction: column; gap: var(--gap); }
+    .tab-page.active { display: flex; }
+
+    /* Card */
+    .card { background: var(--white); border: 1px solid var(--rule); border-radius: var(--r); padding: 1.4rem 1.6rem; }
+    .card-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 1.1rem; padding-bottom: .75rem; border-bottom: 1px solid var(--rule);
+    }
+    .card-head h2 { display: flex; align-items: center; gap: 8px; }
+    .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+    }
+
+    /* Forms */
+    .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; }
+    .field { display: flex; flex-direction: column; }
+    input[type="number"], input[type="text"], input[type="file"], select {
+      padding: 7px 10px; border: 1px solid var(--rule); border-radius: var(--r);
+      font-family: var(--font-ui); font-size: .88rem; color: var(--ink); background: var(--white);
+      width: 100%; transition: border-color .15s;
+    }
+    input[type="number"]::-webkit-inner-spin-button { opacity: .4; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(42,124,111,.1); }
+    input[type="file"] { padding: 5px 8px; cursor: pointer; font-size: .8rem; color: var(--ink-3); }
+    input[type="file"]::file-selector-button {
+      padding: 4px 10px; margin-right: 10px; border: 1px solid var(--rule);
+      border-radius: 4px; background: var(--surface); font-family: var(--font-ui);
+      font-size: .78rem; cursor: pointer; color: var(--ink-2);
+    }
+    input[type="file"]::file-selector-button:hover { background: var(--accent-lt); color: var(--accent); }
+    .file-hint {
+      margin-top: 8px; font-family: var(--font-mono); font-size: .72rem; color: var(--ink-3);
+      background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r);
+      padding: 8px 12px; line-height: 1.8;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 18px; border-radius: var(--r);
+      font-family: var(--font-ui); font-size: .85rem; font-weight: 600;
+      cursor: pointer; transition: opacity .15s, transform .1s; border: 1px solid transparent;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary   { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn-primary:hover { opacity: .88; }
+    .btn-secondary { background: var(--white); color: var(--ink-2); border-color: var(--rule); }
+    .btn-secondary:hover { background: var(--surface); }
+    .btn-danger    { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
+    .btn-danger:hover { background: #ffe4e6; }
+    .btn:disabled  { opacity: .38; cursor: not-allowed; }
+    .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .action-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1.1rem; }
+
+    /* Callout */
+    .callout {
+      background: var(--accent-lt); border-left: 3px solid var(--accent);
+      border-radius: 0 var(--r) var(--r) 0; padding: .75rem 1rem;
+      font-size: .8rem; color: var(--ink-2); line-height: 1.6; margin-top: 1rem;
+    }
+    .callout strong { color: var(--accent); }
+
+    /* Inventory strip */
+    .inv-strip {
+      display: none; grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--rule);
+      border: 1px solid var(--rule); border-radius: var(--r); overflow: hidden; margin-bottom: 1.1rem;
+    }
+    .inv-cell { background: var(--white); padding: .9rem 1.1rem; display: flex; flex-direction: column; gap: 3px; }
+    .inv-label { font-size: .72rem; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+    .inv-row   { display: flex; justify-content: space-between; align-items: baseline; font-size: .82rem; }
+    .inv-row span:last-child { font-family: var(--font-mono); font-weight: 700; color: var(--ink); }
+    .inv-bar-bg   { height: 4px; background: var(--surface); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+    .inv-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width .5s ease; }
+
+    /* Table */
+    .table-controls { display: flex; align-items: center; gap: 10px; margin-bottom: .9rem; flex-wrap: wrap; }
+    .table-controls select { width: auto; font-size: .8rem; padding: 5px 8px; }
+    .result-meta { margin-left: auto; font-size: .78rem; color: var(--ink-3); }
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    thead tr { background: var(--surface); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+    th {
+      padding: 9px 12px; text-align: left; font-size: .73rem; font-weight: 700;
+      color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em;
+      white-space: nowrap; cursor: pointer; user-select: none;
+    }
+    th:hover { color: var(--ink-2); }
+    th.sorted-asc::after  { content: ' \25B2'; font-size: .65rem; color: var(--accent); }
+    th.sorted-desc::after { content: ' \25BC'; font-size: .65rem; color: var(--accent); }
+    td { padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbfc; }
+    td.mono { font-family: var(--font-mono); font-size: .8rem; }
+    td.right { text-align: right; } td.center { text-align: center; }
+    .alloc-cell { display: flex; flex-direction: column; gap: 1px; }
+    .alloc-line { display: flex; justify-content: space-between; gap: 8px; }
+    .al-val { font-family: var(--font-mono); font-size: .78rem; }
+    .al-req { font-family: var(--font-mono); font-size: .75rem; color: var(--ink-3); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 20px;
+      font-size: .72rem; font-weight: 700; border: 1px solid; white-space: nowrap;
+    }
+    .badge-full { background: var(--s-full-bg); color: var(--s-full-txt); border-color: var(--s-full-bdr); }
+    .badge-part { background: var(--s-part-bg); color: var(--s-part-txt); border-color: var(--s-part-bdr); }
+    .badge-none { background: var(--s-none-bg); color: var(--s-none-txt); border-color: var(--s-none-bdr); }
+    .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .score-pill { font-family: var(--font-mono); font-size: .78rem; font-weight: 700; background: var(--accent-lt); color: var(--accent); padding: 2px 8px; border-radius: 4px; }
+    .pri { display: flex; align-items: center; gap: 6px; }
+    .pri-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .p5{background:#dc2626}.p4{background:#ea580c}.p3{background:#ca8a04}.p2{background:#16a34a}.p1{background:#94a3b8}
+
+    /* History */
+    .history-grid { display: flex; flex-direction: column; gap: .75rem; }
+    .hist-card {
+      border: 1px solid var(--rule); border-radius: var(--r);
+      padding: 1rem 1.25rem; background: var(--white);
+      display: grid; grid-template-columns: 1fr auto;
+      gap: .5rem; align-items: start; transition: border-color .15s;
+    }
+    .hist-card:hover { border-color: var(--accent); }
+    .hist-card.faded { opacity: .4; pointer-events: none; }
+    .hist-title { font-weight: 600; font-size: .88rem; color: var(--ink); }
+    .hist-meta  { font-size: .75rem; color: var(--ink-3); margin-top: 3px; }
+    .hist-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .hist-pill  { font-size: .7rem; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--rule); color: var(--ink-2); }
+    .hist-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: none; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--r);
+      overflow: hidden; margin-bottom: 1rem;
+    }
+    .stat-cell { background: var(--white); padding: .85rem 1rem; }
+    .stat-label { font-size: .7rem; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+    .stat-val   { font-size: 1.4rem; font-weight: 700; color: var(--ink); margin-top: 2px; }
+
+    /* Spinner */
+    .spinner { width:16px; height:16px; border:2px solid var(--rule); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--ink); color: #fff;
+      padding: 10px 16px; border-radius: var(--r); font-size: .82rem;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity .25s, transform .25s; pointer-events: none;
+      max-width: 340px; z-index: 999;
+    }
+    #toast.show  { opacity: 1; transform: translateY(0); }
+    #toast.error { background: #991b1b; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--ink-3); font-size: .85rem; }
+    .empty-state svg { width:32px; height:32px; margin:0 auto 12px; display:block; stroke:var(--ink-3); fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+
+    @media(max-width:620px) {
+      .tagline { display:none; }
+      .inv-strip, #detail-inv { grid-template-columns:1fr; }
+      main { padding:1rem; }
+      .hist-card { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header id="app-header">
+  <span class="wordmark">ReliefOps</span>
+  <span class="tagline">Disaster Supply Distribution</span>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('tab-plan')">Distribution</button>
+    <button class="nav-tab"        onclick="showTab('tab-history');loadHistory()">History</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ═══ TAB 1 — DISTRIBUTION ═══ -->
+  <div class="tab-page active" id="tab-plan">
+
+    <!-- Step 1: Inventory -->
+    <section class="card">
+      <div class="card-head">
+        <h2><span class="step-num">1</span> Resource inventory</h2>
+        <small>Total supplies available before distribution</small>
+      </div>
+      <div class="field-grid">
+        <div class="field"><label for="inv-water">Water Trucks</label><input type="number" id="inv-water" min="0" value="100" /></div>
+        <div class="field"><label for="inv-food">Food Packs</label><input type="number" id="inv-food" min="0" value="80" /></div>
+        <div class="field"><label for="inv-med">Medical Kits</label><input type="number" id="inv-med" min="0" value="40" /></div>
+        <div class="field">
+          <label for="plan-label">Plan label <span style="font-weight:400;color:var(--ink-3)">(optional)</span></label>
+          <input type="text" id="plan-label" placeholder="e.g. Operation Flood Relief" maxlength="120" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 2: Upload -->
+    <section class="card">
+      <div class="card-head">
+        <h2><span class="step-num">2</span> Region dataset</h2>
+        <small>Upload a .txt file — one region per line, comma-separated</small>
+      </div>
+     <div class="field">
+        <label for="file-input">Upload .txt file</label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input type="file" id="file-input" accept=".txt" style="flex: 1;" />
+          <button class="btn btn-secondary" type="button" onclick="generateData()" id="btn-gen">
+            Generate 100 Regions
+          </button>
+        </div>
+      </div>
+      <div class="file-hint">
+        <strong>Expected format (CSV, no header row):</strong><br>
+        RegionName, Priority(1&ndash;5), Population, WaterRequired, FoodRequired, MedKitsRequired<br><br>
+        Region_A, 5, 10000, 50, 40, 20<br>
+        Region_B, 3, 5000,  20, 20, 10<br>
+        Region_C, 1, 2000,  10, 10,  5<br>
+        Region_D, 4, 8000,  40, 35, 15
+      </div>
+      <div class="callout">
+  <strong>Algorithm &mdash; Fractional Knapsack:</strong>
+  Score&nbsp;=&nbsp;(Priority&nbsp;&times;&nbsp;Population)&nbsp;&divide;&nbsp;Total&nbsp;Requested&nbsp;Supplies.
+  Regions are sorted descending by efficiency and served in order.
+  Partial allocations are made when inventory runs low.
+  Each plan is <strong>saved permanently to the database</strong>.
+</div>
+      <div class="action-row">
+        <button class="btn btn-primary" id="btn-run" onclick="runDistribution()">
+          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Run &amp; save
+        </button>
+        <button class="btn btn-secondary" onclick="resetPlan()">
+          <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.78"/></svg>
+          Reset
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 3: Results -->
+    <section class="card" id="section-results">
+      <div class="card-head">
+        <h2><span class="step-num">3</span> Distribution plan</h2>
+        <small id="results-sub">Sorted by Efficiency Ratio (Impact &divide; Total Resources)</small>
+      </div>
+
+      <!-- Inventory utilisation strip -->
+      <div class="inv-strip" id="inv-strip-plan">
+        <div class="inv-cell">
+          <span class="inv-label">Water Trucks</span>
+          <div class="inv-row"><span>Allocated</span><span id="p-alloc-w">-</span></div>
+          <div class="inv-row"><span>Remaining</span><span id="p-rem-w">-</span></div>
+          <div class="inv-bar-bg"><div class="inv-bar-fill" id="p-bar-w" style="width:0%"></div></div>
+        </div>
+        <div class="inv-cell">
+          <span class="inv-label">Food Packs</span>
+          <div class="inv-row"><span>Allocated</span><span id="p-alloc-f">-</span></div>
+          <div class="inv-row"><span>Remaining</span><span id="p-rem-f">-</span></div>
+          <div class="inv-bar-bg"><div class="inv-bar-fill" id="p-bar-f" style="width:0%"></div></div>
+        </div>
+        <div class="inv-cell">
+          <span class="inv-label">Medical Kits</span>
+          <div class="inv-row"><span>Allocated</span><span id="p-alloc-m">-</span></div>
+          <div class="inv-row"><span>Remaining</span><span id="p-rem-m">-</span></div>
+          <div class="inv-bar-bg"><div class="inv-bar-fill" id="p-bar-m" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- Results table -->
+      <div id="results-area" style="display:none">
+        <div class="table-controls">
+          <label style="margin:0;font-size:.78rem;color:var(--ink-3)">Filter:</label>
+          <select id="filter-status" onchange="applyFilter()">
+            <option value="all">All regions</option>
+            <option value="full">Fully Satisfied</option>
+            <option value="partial">Partially Satisfied</option>
+            <option value="none">No Supplies Left</option>
+          </select>
+          <div class="result-meta" id="result-meta"></div>
+          <button class="btn btn-secondary" style="padding:5px 12px;font-size:.78rem" onclick="exportCSV()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortTable('rank')"       data-col="rank">Rank</th>
+                <th onclick="sortTable('name')"       data-col="name">Region</th>
+                <th onclick="sortTable('priority')"   data-col="priority">Priority</th>
+                <th onclick="sortTable('population')" data-col="population">Population</th>
+                <th onclick="sortTable('score')"      data-col="score">Score</th>
+                <th>Requested (W/F/M)</th>
+                <th>Allocated (W/F/M)</th>
+                <th onclick="sortTable('status')"     data-col="status">Status</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="empty-state" class="empty-state">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Upload a dataset and click <strong>Run &amp; save</strong> to generate a plan.
+      </div>
+    </section>
+  </div><!-- /tab-plan -->
+
+
+  <!-- ═══ TAB 2 — HISTORY ═══ -->
+  <div class="tab-page" id="tab-history">
+
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-cell"><div class="stat-label">Total plans</div><div class="stat-val" id="st-plans">-</div></div>
+      <div class="stat-cell"><div class="stat-label">Total regions</div><div class="stat-val" id="st-regions">-</div></div>
+      <div class="stat-cell"><div class="stat-label">Fully satisfied</div><div class="stat-val" id="st-full" style="color:#166534">-</div></div>
+      <div class="stat-cell"><div class="stat-label">Partial</div><div class="stat-val" id="st-part" style="color:#854d0e">-</div></div>
+      <div class="stat-cell"><div class="stat-label">Unsatisfied</div><div class="stat-val" id="st-none" style="color:#9f1239">-</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Past distribution plans</h2>
+        <small>Click View to load full results, Delete to remove permanently</small>
+      </div>
+      <div id="history-list"></div>
+    </div>
+
+    <!-- Plan detail panel -->
+    <div class="card" id="history-detail" style="display:none">
+      <div class="card-head">
+        <h2 id="detail-title">Plan detail</h2>
+        <button class="btn btn-secondary" style="padding:5px 12px;font-size:.78rem" onclick="closeDetail()">Close</button>
+      </div>
+      <div class="inv-strip" id="detail-inv">
+        <div class="inv-cell">
+          <span class="inv-label">Water Trucks</span>
+          <div class="inv-row"><span>Allocated</span><span id="d-alloc-w">-</span></div>
+          <div class="inv-row"><span>Remaining</span><span id="d-rem-w">-</span></div>
+          <div class="inv-bar-bg"><div class="inv-bar-fill" id="d-bar-w" style="width:0%"></div></div>
+        </div>
+        <div class="inv-cell">
+          <span class="inv-label">Food Packs</span>
+          <div class="inv-row"><span>Allocated</span><span id="d-alloc-f">-</span></div>
+          <div class="inv-row"><span>Remaining</span><span id="d-rem-f">-</span></div>
+          <div class="inv-bar-bg"><div class="inv-bar-fill" id="d-bar-f" style="width:0%"></div></div>
+        </div>
+        <div class="inv-cell">
+          <span class="inv-label">Medical Kits</span>
+          <div class="inv-row"><span>Allocated</span><span id="d-alloc-m">-</span></div>
+          <div class="inv-row"><span>Remaining</span><span id="d-rem-m">-</span></div>
+          <div class="inv-bar-bg"><div class="inv-bar-fill" id="d-bar-m" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th><th>Region</th><th>Priority</th><th>Population</th><th>Score</th>
+              <th>Requested (W/F/M)</th><th>Allocated (W/F/M)</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="detail-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /tab-history -->
+
+</main>
+
+
+<div id="toast"></div>
+<script>
+  /* ── State ── */
+  var S = { results:[], inv:{}, sortCol:'rank', sortDir:'asc', filter:'all' };
+
+  /* ── Tab switching ── */
+  function showTab(id) {
+    document.querySelectorAll('.tab-page').forEach(function(p){p.classList.remove('active');});
+    document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.remove('active');});
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.nav-tab')[id==='tab-plan'?0:1].classList.add('active');
+  }
+
+  /* ── Toast ── */
+  var _tt=null;
+  function toast(msg,err){
+    var el=document.getElementById('toast');
+    el.textContent=msg; el.className='show'+(err?' error':'');
+    clearTimeout(_tt); _tt=setTimeout(function(){el.className='';},4000);
+  }
+
+  /* ── File parse (browser-side validation before sending) ── */
+  function parseLine(line,i){
+    var t=line.trim(); if(!t||t[0]==='#') return null;
+    var p=t.split(',').map(function(x){return x.trim();});
+    if(p.length<6) return null;
+    var pri=parseInt(p[1],10),pop=parseInt(p[2],10),w=parseInt(p[3],10),f=parseInt(p[4],10),m=parseInt(p[5],10);
+    if([pri,pop,w,f,m].some(isNaN)||pri<1||pri>5||!p[0]) return null;
+    return {name:p[0],priority:pri,population:pop,water:w,food:f,med:m};
+  }
+  function parseFile(text){
+    var rows=[];
+    text.split('\n').forEach(function(l,i){var r=parseLine(l,i+1);if(r)rows.push(r);});
+    if(!rows.length) throw new Error('No valid region data found. Check the file format.');
+    return rows;
+  }
+
+/* ── Generate Dataset using Python Backend ── */
+  function generateData() {
+    var btn = document.getElementById('btn-gen');
+    var oldHtml = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Generating...';
+    btn.disabled = true;
+
+    fetch('/api/generate?count=100')
+      .then(function(response) {
+        if (!response.ok) throw new Error('Failed to generate data');
+        return response.text();
+      })
+      .then(function(text) {
+        var file = new File([text], "python_generated_regions.txt", { type: "text/plain" });
+        var dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        document.getElementById('file-input').files = dataTransfer.files;
+        toast('100 regions generated by Python successfully!');
+      })
+      .catch(function(err) {
+        toast(err.message, true);
+      })
+      .finally(function() {
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+      });
+  }
+
+  /* ── Run distribution — POSTs to Flask ── */
+  function runDistribution(){
+    var w=parseInt(document.getElementById('inv-water').value,10);
+    var f=parseInt(document.getElementById('inv-food').value,10);
+    var m=parseInt(document.getElementById('inv-med').value,10);
+    if([w,f,m].some(isNaN)||w<0||f<0||m<0){toast('Enter valid non-negative inventory values.',true);return;}
+    if(w===0&&f===0&&m===0){toast('All inventory values are 0 — nothing to distribute.',true);return;}
+
+    var fi=document.getElementById('file-input');
+    if(!fi.files||!fi.files.length){toast('Select a .txt region file first.',true);return;}
+    if(!fi.files[0].name.toLowerCase().endsWith('.txt')){toast('Only .txt files accepted.',true);return;}
+
+    var reader=new FileReader();
+    reader.onerror=function(){toast('Could not read the file.',true);};
+    reader.onload=function(e){
+      var regions;
+      try{regions=parseFile(e.target.result);}catch(err){toast(err.message,true);return;}
+
+      /* Loading state */
+      var btn=document.getElementById('btn-run');
+      btn.disabled=true;
+      btn.innerHTML='<span class="spinner"></span> Saving...';
+
+      /* POST to Flask backend */
+      fetch('/api/run',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          label:document.getElementById('plan-label').value.trim(),
+          water:w, food:f, med:m, regions:regions
+        })
+      })
+      .then(function(r){
+        if(!r.ok) return r.json().then(function(d){throw new Error(d.error||'Server error');});
+        return r.json();
+      })
+      .then(function(data){
+        S.results=data.results; S.inv={water:w,food:f,med:m};
+        fillInvStrip('p',data.results,S.inv);
+        document.getElementById('inv-strip-plan').style.display='grid';
+        renderTable();
+        document.getElementById('results-area').style.display='block';
+        document.getElementById('empty-state').style.display='none';
+        document.getElementById('results-sub').textContent='Plan #'+data.plan_id+' saved to database';
+        document.getElementById('section-results').scrollIntoView({behavior:'smooth'});
+        toast('Plan #'+data.plan_id+' saved — '+data.results.length+' regions processed.');
+      })
+      .catch(function(err){toast(err.message,true);})
+      .finally(function(){
+        btn.disabled=false;
+        btn.innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run &amp; save';
+      });
+    };
+    reader.readAsText(fi.files[0]);
+  }
+
+  /* ── Inventory strip fill (reused for plan & history detail) ── */
+  function fillInvStrip(prefix,results,inv){
+    var aw=results.reduce(function(s,r){return s+r.allocWater;},0);
+    var af=results.reduce(function(s,r){return s+r.allocFood;},0);
+    var am=results.reduce(function(s,r){return s+r.allocMed;},0);
+    function p(a,t){return t===0?0:Math.min(100,Math.round(a/t*100));}
+    document.getElementById(prefix+'-alloc-w').textContent=aw;
+    document.getElementById(prefix+'-rem-w').textContent=inv.water-aw;
+    document.getElementById(prefix+'-bar-w').style.width=p(aw,inv.water)+'%';
+    document.getElementById(prefix+'-alloc-f').textContent=af;
+    document.getElementById(prefix+'-rem-f').textContent=inv.food-af;
+    document.getElementById(prefix+'-bar-f').style.width=p(af,inv.food)+'%';
+    document.getElementById(prefix+'-alloc-m').textContent=am;
+    document.getElementById(prefix+'-rem-m').textContent=inv.med-am;
+    document.getElementById(prefix+'-bar-m').style.width=p(am,inv.med)+'%';
+  }
+
+  /* ── Table helpers ── */
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function badge(status){
+    var m={full:['badge-full','Fully Satisfied'],partial:['badge-part','Partially Satisfied'],none:['badge-none','No Supplies Left']};
+    var b=m[status]||['badge-none','Unknown'];
+    return '<span class="badge '+b[0]+'">'+b[1]+'</span>';
+  }
+  function dot(p){return '<span class="pri"><span class="pri-dot p'+p+'"></span>'+p+'</span>';}
+
+  function buildRows(rows){
+    return rows.map(function(r){
+      var ws=r.allocWater<r.water?'color:var(--s-part-txt)':'';
+      var fs=r.allocFood<r.food?'color:var(--s-part-txt)':'';
+      var ms=r.allocMed<r.med?'color:var(--s-part-txt)':'';
+      return '<tr>'+
+        '<td class="mono center">'+r.rank+'</td>'+
+        '<td><strong>'+esc(r.name)+'</strong></td>'+
+        '<td>'+dot(r.priority)+'</td>'+
+        '<td class="mono right">'+r.population.toLocaleString()+'</td>'+
+        '<td class="center"><span class="score-pill">'+r.score.toLocaleString()+'</span></td>'+
+        '<td><div class="alloc-cell">'+
+          '<div class="alloc-line"><span style="color:var(--ink-3);font-size:.72rem">W</span><span class="al-req">'+r.water+'</span></div>'+
+          '<div class="alloc-line"><span style="color:var(--ink-3);font-size:.72rem">F</span><span class="al-req">'+r.food+'</span></div>'+
+          '<div class="alloc-line"><span style="color:var(--ink-3);font-size:.72rem">M</span><span class="al-req">'+r.med+'</span></div>'+
+        '</div></td>'+
+        '<td><div class="alloc-cell">'+
+          '<div class="alloc-line"><span style="color:var(--ink-3);font-size:.72rem">W</span><span class="al-val" style="'+ws+'">'+r.allocWater+'</span></div>'+
+          '<div class="alloc-line"><span style="color:var(--ink-3);font-size:.72rem">F</span><span class="al-val" style="'+fs+'">'+r.allocFood+'</span></div>'+
+          '<div class="alloc-line"><span style="color:var(--ink-3);font-size:.72rem">M</span><span class="al-val" style="'+ms+'">'+r.allocMed+'</span></div>'+
+        '</div></td>'+
+        '<td>'+badge(r.status)+'</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function renderTable(){
+    var rows=S.results.slice();
+    if(S.filter!=='all') rows=rows.filter(function(r){return r.status===S.filter;});
+    var col=S.sortCol,dir=S.sortDir==='asc'?1:-1;
+    rows.sort(function(a,b){
+      var va=a[col],vb=b[col];
+      if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}
+      return va<vb?-dir:va>vb?dir:0;
+    });
+    document.querySelectorAll('th[data-col]').forEach(function(th){
+      th.classList.remove('sorted-asc','sorted-desc');
+      if(th.dataset.col===col) th.classList.add(S.sortDir==='asc'?'sorted-asc':'sorted-desc');
+    });
+    document.getElementById('results-tbody').innerHTML=buildRows(rows);
+    var c={full:0,partial:0,none:0};
+    S.results.forEach(function(r){c[r.status]++;});
+    document.getElementById('result-meta').textContent=c.full+' satisfied \u00B7 '+c.partial+' partial \u00B7 '+c.none+' unsatisfied';
+  }
+
+  function sortTable(col){
+    S.sortDir=S.sortCol===col?(S.sortDir==='asc'?'desc':'asc'):'asc';
+    S.sortCol=col; renderTable();
+  }
+  function applyFilter(){S.filter=document.getElementById('filter-status').value;renderTable();}
+
+  function resetPlan(){
+    S.results=[];S.inv={};
+    document.getElementById('file-input').value='';
+    document.getElementById('filter-status').value='all';
+    document.getElementById('inv-strip-plan').style.display='none';
+    document.getElementById('results-area').style.display='none';
+    document.getElementById('empty-state').style.display='block';
+    document.getElementById('results-tbody').innerHTML='';
+    document.getElementById('results-sub').textContent='Sorted by Score (Priority \u00D7 Population)';
+    toast('Reset complete.');
+  }
+
+  function exportCSV(){
+    if(!S.results.length){toast('No data to export.',true);return;}
+    var h=['Rank','Region','Priority','Population','Score','Req_Water','Req_Food','Req_Med','Alloc_Water','Alloc_Food','Alloc_Med','Status'];
+    var rows=S.results.map(function(r){return[r.rank,r.name,r.priority,r.population,r.score,r.water,r.food,r.med,r.allocWater,r.allocFood,r.allocMed,r.status];});
+    var csv=[h].concat(rows).map(function(r){return r.map(function(v){return'"'+v+'"';}).join(',');}).join('\n');
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download='reliefops-'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click(); toast('CSV exported.');
+  }
+
+  /* ── History tab ── */
+  function loadHistory(){
+    /* Stats */
+    fetch('/api/stats').then(function(r){return r.json();}).then(function(d){
+      document.getElementById('st-plans').textContent=d.total_plans;
+      document.getElementById('st-regions').textContent=d.total_regions;
+      document.getElementById('st-full').textContent=d.satisfied;
+      document.getElementById('st-part').textContent=d.partial;
+      document.getElementById('st-none').textContent=d.unsatisfied;
+      document.getElementById('stats-bar').style.display=d.total_plans>0?'grid':'none';
+    }).catch(function(){});
+
+    /* List */
+    var list=document.getElementById('history-list');
+    list.innerHTML='<div style="color:var(--ink-3);font-size:.82rem;padding:.5rem 0;display:flex;align-items:center;gap:8px"><span class="spinner"></span> Loading...</div>';
+    fetch('/api/history')
+      .then(function(r){return r.json();})
+      .then(function(plans){
+        if(!plans.length){
+          list.innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>No plans yet. Run a distribution to save one.</div>';
+          return;
+        }
+        list.innerHTML='<div class="history-grid">'+plans.map(function(p){
+          return '<div class="hist-card" id="hcard-'+p.id+'">'+
+            '<div>'+
+              '<div class="hist-title">'+esc(p.label||'Unnamed plan')+' <span style="font-size:.72rem;font-weight:400;color:var(--ink-3)">#'+p.id+'</span></div>'+
+              '<div class="hist-meta">'+p.created_at+' &nbsp;&middot;&nbsp; '+p.region_count+' regions</div>'+
+              '<div class="hist-pills">'+
+                '<span class="hist-pill">W: '+p.inventory.water+'</span>'+
+                '<span class="hist-pill">F: '+p.inventory.food+'</span>'+
+                '<span class="hist-pill">M: '+p.inventory.med+'</span>'+
+                '<span class="badge badge-full" style="font-size:.68rem">'+p.satisfied+' full</span>'+
+                (p.partial?'<span class="badge badge-part" style="font-size:.68rem">'+p.partial+' partial</span>':'')+
+                (p.unsatisfied?'<span class="badge badge-none" style="font-size:.68rem">'+p.unsatisfied+' unmet</span>':'')+
+              '</div>'+
+            '</div>'+
+            '<div class="hist-actions">'+
+              '<button class="btn btn-secondary" style="padding:5px 12px;font-size:.75rem" onclick="loadDetail('+p.id+');event.stopPropagation()">View</button>'+
+              '<button class="btn btn-danger"    style="padding:5px 12px;font-size:.75rem" onclick="deletePlan('+p.id+');event.stopPropagation()">Delete</button>'+
+            '</div>'+
+          '</div>';
+        }).join('')+'</div>';
+      })
+      .catch(function(){list.innerHTML='<div class="empty-state">Could not reach server. Is Flask running?</div>';});
+  }
+
+  function loadDetail(id){
+    var det=document.getElementById('history-detail');
+    det.style.display='block';
+    document.getElementById('detail-title').textContent='Loading plan #'+id+'...';
+    document.getElementById('detail-tbody').innerHTML='';
+    document.getElementById('detail-inv').style.display='none';
+    det.scrollIntoView({behavior:'smooth'});
+
+    fetch('/api/history/'+id)
+      .then(function(r){if(!r.ok)throw new Error('Not found');return r.json();})
+      .then(function(d){
+        document.getElementById('detail-title').textContent=(d.label||'Unnamed plan')+' — Plan #'+d.id+' ('+d.created_at+')';
+        /* Fill inventory strip using stored used values */
+        var inv=d.inventory,used=d.used;
+        function p(a,t){return t===0?0:Math.min(100,Math.round(a/t*100));}
+        document.getElementById('d-alloc-w').textContent=used.water;
+        document.getElementById('d-rem-w').textContent=inv.water-used.water;
+        document.getElementById('d-bar-w').style.width=p(used.water,inv.water)+'%';
+        document.getElementById('d-alloc-f').textContent=used.food;
+        document.getElementById('d-rem-f').textContent=inv.food-used.food;
+        document.getElementById('d-bar-f').style.width=p(used.food,inv.food)+'%';
+        document.getElementById('d-alloc-m').textContent=used.med;
+        document.getElementById('d-rem-m').textContent=inv.med-used.med;
+        document.getElementById('d-bar-m').style.width=p(used.med,inv.med)+'%';
+        document.getElementById('detail-inv').style.display='grid';
+        document.getElementById('detail-tbody').innerHTML=buildRows(d.results);
+      })
+      .catch(function(err){document.getElementById('detail-title').textContent='Error: '+err.message;});
+  }
+
+  function closeDetail(){document.getElementById('history-detail').style.display='none';}
+
+  function deletePlan(id){
+    if(!confirm('Delete plan #'+id+'? This cannot be undone.')) return;
+    var card=document.getElementById('hcard-'+id);
+    if(card) card.classList.add('faded');
+    fetch('/api/history/'+id,{method:'DELETE'})
+      .then(function(r){if(!r.ok)throw new Error('Delete failed');return r.json();})
+      .then(function(){toast('Plan #'+id+' deleted.');loadHistory();closeDetail();})
+      .catch(function(err){toast(err.message,true);if(card)card.classList.remove('faded');});
+  }
+</script>
+</body>
+</html>
