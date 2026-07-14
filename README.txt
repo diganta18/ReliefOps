@@ -1,48 +1,25 @@
-╔══════════════════════════════════════════════════════╗
-║  ReliefOps — Disaster Supply Distribution Planner   ║
-║  B.Tech Project  |  Flask + SQLite Backend          ║
-╚══════════════════════════════════════════════════════╝
+# ReliefOps
 
-PROJECT STRUCTURE
-─────────────────
-reliefops/
-├── app.py                 ← Flask server + API + algorithm
-├── requirements.txt       ← Python dependencies
-├── README.txt             ← This file
-├── reliefops.db           ← SQLite DB (auto-created on first run)
-└── templates/
-    └── index.html         ← Full frontend (HTML/CSS/JS)
+ReliefOps is a web-based platform built with the Flask framework designed to streamline and manage disaster relief operations. The system helps coordinate resources, track distributions, and optimize logistics during critical response missions.
 
-SETUP — run these commands once
-────────────────────────────────
-  pip install -r requirements.txt
+## 🚀 Features
+* **Resource Management:** Real-time tracking of aid, supplies, and logistics.
+* **Operations Dashboard:** Centralized view for administrators to monitor ongoing relief efforts.
+* **Responsive Design:** Clean, accessible user interface built using standard HTML templates.
 
-RUN
-───
-  python app.py
-  Then open:  http://localhost:5000
+## 🛠️ Tech Stack
+* **Backend:** Python, Flask
+* **Frontend:** HTML5, CSS3, JavaScript
+* **Environment:** VirtualBox Simulation
 
-API ENDPOINTS
-─────────────
-  POST   /api/run                → Run algorithm + save plan to DB
-  GET    /api/history            → List all saved plans
-  GET    /api/history/<id>       → Full detail of one plan
-  DELETE /api/history/<id>       → Delete a plan permanently
-  GET    /api/stats              → Aggregate statistics
+## 📦 Installation & Setup
 
-DATASET FORMAT  (.txt file)
-───────────────────────────
-  One region per line, comma-separated, no header row:
-  RegionName, Priority(1-5), Population, Water, Food, MedKits
+Follow these steps to set up and run the project locally on your machine.
 
-  Example:
-  Region_A, 5, 10000, 50, 40, 20
-  Region_B, 3, 5000,  20, 20, 10
-  Region_C, 1, 2000,  10, 10,  5
-  Region_D, 4, 8000,  40, 35, 15
+### 1. Prerequisites
+Ensure you have Python 3.x installed. You will also need `pip` for package management.
 
-ALGORITHM
-─────────
-  Greedy allocation: Score = Priority × Population
-  Regions are sorted descending by score and served in order.
-  Partial allocations are made when inventory runs low.
+### 2. Clone the Repository
+```bash
+git clone git@github.com:diganta18/ReliefOps.git
+cd reliefops
